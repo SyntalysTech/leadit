@@ -29,10 +29,10 @@ export default function Home() {
               <a href="#home" className="text-gray-300 hover:text-white transition font-medium">Home</a>
               <Link href="/servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</Link>
               <Link href="/proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
-              <a href="#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</a>
-              <a href="#contacto" className="btn-3d text-base px-6 py-3">
+              <Link href="/contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
+              <Link href="/contacto" className="btn-3d text-base px-6 py-3">
                 Empezar
-              </a>
+              </Link>
             </div>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -50,8 +50,8 @@ export default function Home() {
               <a href="#home" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</a>
               <Link href="/servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</Link>
               <Link href="/proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</Link>
-              <a href="#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</a>
-              <a href="#contacto" className="btn-3d w-full mt-4">Empezar</a>
+              <Link href="/contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
+              <Link href="/contacto" className="btn-3d w-full mt-4">Empezar</Link>
             </div>
           </div>
         )}
@@ -76,12 +76,12 @@ export default function Home() {
                 Automatiza tu proceso comercial y multiplica tus resultados.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <a href="#contacto" className="btn-3d">
+                <Link href="/contacto" className="btn-3d">
                   Solicitar Demo Gratis
-                </a>
-                <a href="#servicios" className="btn-3d btn-3d-white">
+                </Link>
+                <Link href="/servicios" className="btn-3d btn-3d-white">
                   Ver Servicios
-                </a>
+                </Link>
               </div>
 
               {/* Stats inline */}

@@ -325,8 +325,8 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-lg mb-1">Email</h3>
-                    <a href="mailto:hola@leadit.es" className="text-gray-400 hover:text-[#E42C24] transition">
-                      hola@leadit.es
+                    <a href="mailto:contacto@leadit.es" className="text-gray-400 hover:text-[#E42C24] transition">
+                      contacto@leadit.es
                     </a>
                   </div>
                 </div>
@@ -341,8 +341,8 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-lg mb-1">Teléfono</h3>
-                    <a href="tel:+34900123456" className="text-gray-400 hover:text-[#E42C24] transition">
-                      +34 900 123 456
+                    <a href="tel:+34641590487" className="text-gray-400 hover:text-[#E42C24] transition">
+                      +34 641 590 487
                     </a>
                   </div>
                 </div>
@@ -357,7 +357,7 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-lg mb-1">WhatsApp</h3>
-                    <a href="https://wa.me/34900123456" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition">
+                    <a href="https://wa.me/34641590487" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition">
                       Escríbenos directo
                     </a>
                   </div>
