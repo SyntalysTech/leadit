@@ -2,90 +2,188 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-// Demo de llamada interactiva
+// Tipos para la conversación
+interface CallMessage {
+  role: "agent" | "user";
+  content: string;
+}
+
+// Demo de llamada interactiva con IA real
 function CallDemo() {
   const [isCallActive, setIsCallActive] = useState(false);
-  const [callStep, setCallStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [userInput, setUserInput] = useState("");
+  const [messages, setMessages] = useState<CallMessage[]>([]);
+  const [callEnded, setCallEnded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const callScript = [
-    {
-      agent: "Hola, buenos días. Soy Laura de Leadit. ¿Hablo con el responsable de ventas?",
-      user: "Sí, soy yo. ¿En qué puedo ayudarte?",
-    },
-    {
-      agent: "Perfecto. Le llamo porque hemos ayudado a empresas como la suya a triplicar sus ventas cualificadas. ¿Tiene dos minutos para contarle cómo?",
-      user: "Sí, cuéntame.",
-    },
-    {
-      agent: "Excelente. Nuestro equipo de setters cualifica leads antes de pasarlos a su equipo comercial. Solo hablan con prospectos listos para comprar. ¿Le interesaría una demo gratuita?",
-      user: "Sí, me interesa.",
-    },
-    {
-      agent: "Genial. Le envío un enlace para agendar la demo. ¿Cuál es su email?",
-      user: null,
-    },
-  ];
+  // Auto-scroll a últimos mensajes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const playAudio = async (text: string) => {
-    setIsLoading(true);
-    setIsSpeaking(true);
+  // Configurar reconocimiento de voz
+  useEffect(() => {
+    if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = "es-ES";
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setUserInput(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const playAudio = async (text: string): Promise<void> => {
+    return new Promise(async (resolve) => {
+      setIsSpeaking(true);
+      try {
+        const response = await fetch("/api/voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!response.ok) throw new Error("Audio error");
+
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        if (audioRef.current) {
+          audioRef.current.src = audioUrl;
+          audioRef.current.onended = () => {
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+            resolve();
+          };
+          audioRef.current.onerror = () => {
+            setIsSpeaking(false);
+            resolve();
+          };
+          await audioRef.current.play();
+        } else {
+          resolve();
+        }
+      } catch (error) {
+        console.error("Error playing audio:", error);
+        setIsSpeaking(false);
+        resolve();
+      }
+    });
+  };
+
+  const getAIResponse = async (conversation: CallMessage[]): Promise<string> => {
     try {
-      const response = await fetch("/api/voice", {
+      const response = await fetch("/api/call-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ messages: conversation }),
       });
 
-      if (!response.ok) throw new Error("Audio error");
+      if (!response.ok) throw new Error("API error");
 
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-        };
-        await audioRef.current.play();
-      }
+      const data = await response.json();
+      return data.response;
     } catch (error) {
-      console.error("Error playing audio:", error);
-      setIsSpeaking(false);
-    } finally {
-      setIsLoading(false);
+      console.error("Error getting AI response:", error);
+      return "Disculpa, ha habido un problema de conexión. ¿Podemos continuar?";
     }
   };
 
   const startCall = async () => {
     setIsCallActive(true);
-    setCallStep(0);
-    await playAudio(callScript[0].agent);
+    setCallEnded(false);
+    setMessages([]);
+    setIsLoading(true);
+
+    const greeting = "¡Hola, buenos días! Soy Laura de Leadit. ¿Hablo con el responsable de ventas o marketing de la empresa?";
+    setMessages([{ role: "agent", content: greeting }]);
+    setIsLoading(false);
+    await playAudio(greeting);
   };
 
-  const nextStep = async () => {
-    if (callStep < callScript.length - 1) {
-      const nextStepIndex = callStep + 1;
-      setCallStep(nextStepIndex);
-      await playAudio(callScript[nextStepIndex].agent);
+  const sendMessage = async () => {
+    if (!userInput.trim() || isLoading || isSpeaking) return;
+
+    const userMessage = userInput.trim();
+    setUserInput("");
+
+    // Añadir mensaje del usuario
+    const updatedMessages: CallMessage[] = [...messages, { role: "user", content: userMessage }];
+    setMessages(updatedMessages);
+
+    // Obtener respuesta de IA
+    setIsLoading(true);
+    const aiResponse = await getAIResponse(updatedMessages);
+
+    // Verificar si la conversación debe terminar
+    const shouldEnd = aiResponse.includes("[FIN_LLAMADA]");
+    const cleanResponse = aiResponse.replace("[FIN_LLAMADA]", "").trim();
+
+    setMessages(prev => [...prev, { role: "agent", content: cleanResponse }]);
+    setIsLoading(false);
+
+    // Reproducir audio
+    await playAudio(cleanResponse);
+
+    if (shouldEnd) {
+      setCallEnded(true);
+    }
+  };
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Tu navegador no soporta reconocimiento de voz");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
     } else {
-      setIsCallActive(false);
-      setCallStep(0);
+      setIsListening(true);
+      recognitionRef.current.start();
     }
   };
 
   const endCall = () => {
     setIsCallActive(false);
-    setCallStep(0);
+    setMessages([]);
+    setCallEnded(false);
     setIsSpeaking(false);
+    setIsListening(false);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+    }
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -114,7 +212,7 @@ function CallDemo() {
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Demo Call Center IA</h3>
                   <p className="text-gray-400 text-center text-sm mb-8">
-                    Experimenta una llamada real con nuestro agente de voz IA
+                    Habla con Laura, nuestra agente IA con voz real. Responde por texto o micrófono.
                   </p>
                   <button
                     onClick={startCall}
@@ -127,66 +225,119 @@ function CallDemo() {
                 // Active call
                 <div className="flex-1 flex flex-col">
                   {/* Call header */}
-                  <div className="p-6 text-center border-b border-[#26262e]">
-                    <div className="w-16 h-16 bg-[#E42C24] rounded-full flex items-center justify-center mx-auto mb-3">
-                      <span className="text-2xl font-bold text-white">L</span>
+                  <div className="p-4 text-center border-b border-[#26262e]">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-12 h-12 bg-[#E42C24] rounded-full flex items-center justify-center">
+                        <span className="text-lg font-bold text-white">L</span>
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-base font-bold text-white">Laura - Leadit</h3>
+                        <p className="text-green-400 text-xs flex items-center gap-2">
+                          {isSpeaking ? (
+                            <>
+                              <span className="flex gap-0.5">
+                                <span className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                                <span className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                                <span className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                              </span>
+                              Hablando...
+                            </>
+                          ) : isLoading ? (
+                            "Pensando..."
+                          ) : (
+                            "En llamada"
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-bold text-white">Laura - Leadit</h3>
-                    <p className="text-green-400 text-sm flex items-center justify-center gap-2">
-                      {isSpeaking && (
-                        <span className="flex gap-1">
-                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
-                        </span>
-                      )}
-                      {isSpeaking ? "Hablando..." : "En llamada"}
-                    </p>
                   </div>
 
                   {/* Conversation */}
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
-                    {callScript.slice(0, callStep + 1).map((step, i) => (
-                      <div key={i} className="space-y-3">
-                        <div className="flex gap-2">
-                          <div className="w-8 h-8 bg-[#E42C24] rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-white">L</span>
+                  <div className="flex-1 p-3 overflow-y-auto space-y-3">
+                    {messages.map((msg, i) => (
+                      <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : ""}`}>
+                        {msg.role === "agent" && (
+                          <div className="w-7 h-7 bg-[#E42C24] rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-bold text-white">L</span>
                           </div>
-                          <div className="bg-[#26262e] rounded-2xl rounded-tl-sm p-3 max-w-[85%]">
-                            <p className="text-sm text-white">{step.agent}</p>
-                          </div>
+                        )}
+                        <div className={`rounded-2xl p-3 max-w-[80%] ${
+                          msg.role === "user"
+                            ? "bg-[#E42C24] rounded-tr-sm"
+                            : "bg-[#26262e] rounded-tl-sm"
+                        }`}>
+                          <p className="text-sm text-white">{msg.content}</p>
                         </div>
-                        {step.user && i <= callStep && (
-                          <div className="flex gap-2 justify-end">
-                            <div className="bg-[#E42C24] rounded-2xl rounded-tr-sm p-3 max-w-[85%]">
-                              <p className="text-sm text-white">{step.user}</p>
-                            </div>
-                            <div className="w-8 h-8 bg-[#3a3a3a] rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-bold text-white">Tú</span>
-                            </div>
+                        {msg.role === "user" && (
+                          <div className="w-7 h-7 bg-[#3a3a3a] rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-bold text-white">Tú</span>
                           </div>
                         )}
                       </div>
                     ))}
+                    {isLoading && (
+                      <div className="flex gap-2">
+                        <div className="w-7 h-7 bg-[#E42C24] rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-[10px] font-bold text-white">L</span>
+                        </div>
+                        <div className="bg-[#26262e] rounded-2xl rounded-tl-sm p-3">
+                          <div className="flex gap-1">
+                            <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                            <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                            <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Call actions */}
-                  <div className="p-4 border-t border-[#26262e]">
-                    {callScript[callStep].user && !isSpeaking && (
-                      <button
-                        onClick={nextStep}
-                        disabled={isLoading}
-                        className="w-full bg-[#26262e] hover:bg-[#3a3a3a] text-white font-medium py-3 px-6 rounded-xl mb-3 transition"
-                      >
-                        &quot;{callScript[callStep].user}&quot;
-                      </button>
+                  {/* Input area */}
+                  <div className="p-3 border-t border-[#26262e]">
+                    {!callEnded ? (
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          placeholder="Escribe tu respuesta..."
+                          disabled={isLoading || isSpeaking}
+                          className="flex-1 bg-[#26262e] text-white text-sm px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E42C24] disabled:opacity-50"
+                        />
+                        <button
+                          onClick={toggleListening}
+                          disabled={isLoading || isSpeaking}
+                          className={`w-11 h-11 rounded-xl flex items-center justify-center transition ${
+                            isListening
+                              ? "bg-red-500 animate-pulse"
+                              : "bg-[#26262e] hover:bg-[#3a3a3a]"
+                          } disabled:opacity-50`}
+                          title="Hablar por micrófono"
+                        >
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={sendMessage}
+                          disabled={!userInput.trim() || isLoading || isSpeaking}
+                          className="w-11 h-11 bg-[#E42C24] rounded-xl flex items-center justify-center shadow-[0_3px_0_#a01d17] hover:shadow-[0_1px_0_#a01d17] hover:translate-y-0.5 transition disabled:opacity-50 disabled:hover:translate-y-0"
+                        >
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-center text-green-400 text-sm py-2">Llamada finalizada</p>
                     )}
-                    <div className="flex justify-center gap-4">
+                    <div className="flex justify-center mt-3">
                       <button
                         onClick={endCall}
-                        className="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center shadow-[0_3px_0_#b91c1c]"
+                        className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-[0_3px_0_#b91c1c]"
                       >
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
@@ -307,12 +458,20 @@ function ChatbotDemo() {
 function WorkflowDemo() {
   const [activeStep, setActiveStep] = useState(0);
 
+  const stepIcons = [
+    <svg key="inbox" className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>,
+    <svg key="robot" className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+    <svg key="calendar" className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    <svg key="bell" className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
+    <svg key="check" className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  ];
+
   const steps = [
-    { icon: "📥", label: "Lead entra", desc: "Nuevo contacto desde web" },
-    { icon: "🤖", label: "IA califica", desc: "Análisis automático" },
-    { icon: "📅", label: "Agenda cita", desc: "Slot en calendario" },
-    { icon: "📧", label: "Notifica", desc: "Email + WhatsApp" },
-    { icon: "✅", label: "CRM actualizado", desc: "Todo sincronizado" },
+    { icon: stepIcons[0], label: "Lead entra", desc: "Nuevo contacto desde web" },
+    { icon: stepIcons[1], label: "IA califica", desc: "Análisis automático" },
+    { icon: stepIcons[2], label: "Agenda cita", desc: "Slot en calendario" },
+    { icon: stepIcons[3], label: "Notifica", desc: "Email + WhatsApp" },
+    { icon: stepIcons[4], label: "CRM actualizado", desc: "Todo sincronizado" },
   ];
 
   useState(() => {
@@ -414,13 +573,13 @@ export default function ServiciosPage() {
 
               <div className="space-y-4 mb-8">
                 {[
-                  { icon: "🎯", text: "Voces naturales en español con ElevenLabs" },
-                  { icon: "📞", text: "Llamadas entrantes y salientes 24/7" },
-                  { icon: "🧠", text: "Entiende contexto y objeciones" },
-                  { icon: "📊", text: "Transcripción y análisis automático" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2}/><circle cx="12" cy="12" r="3" strokeWidth={2}/></svg>, text: "Voces naturales en español con ElevenLabs" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>, text: "Llamadas entrantes y salientes 24/7" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>, text: "Entiende contexto y objeciones" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>, text: "Transcripción y análisis automático" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
-                    <span className="text-2xl">{item.icon}</span>
+                    <span className="flex-shrink-0">{item.icon}</span>
                     <span className="text-gray-300">{item.text}</span>
                   </div>
                 ))}
@@ -466,13 +625,13 @@ export default function ServiciosPage() {
 
               <div className="space-y-4 mb-8">
                 {[
-                  { icon: "💬", text: "Respuestas naturales con GPT-4" },
-                  { icon: "📱", text: "WhatsApp Business API integrada" },
-                  { icon: "🔄", text: "Escalado inteligente a humanos" },
-                  { icon: "📈", text: "Analíticas y métricas en tiempo real" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>, text: "Respuestas naturales con GPT-4" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>, text: "WhatsApp Business API integrada" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>, text: "Escalado inteligente a humanos" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>, text: "Analíticas y métricas en tiempo real" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
-                    <span className="text-2xl">{item.icon}</span>
+                    <span className="flex-shrink-0">{item.icon}</span>
                     <span className="text-gray-300">{item.text}</span>
                   </div>
                 ))}
@@ -511,13 +670,13 @@ export default function ServiciosPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { num: "5000+", label: "Apps conectadas", icon: "🔗" },
-              { num: "100%", label: "Sin código", icon: "🚀" },
-              { num: "24/7", label: "Funcionando", icon: "⚡" },
-              { num: "<1s", label: "Tiempo respuesta", icon: "🎯" },
+              { num: "5000+", label: "Apps conectadas", icon: <svg className="w-10 h-10 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
+              { num: "100%", label: "Sin código", icon: <svg className="w-10 h-10 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
+              { num: "24/7", label: "Funcionando", icon: <svg className="w-10 h-10 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+              { num: "<1s", label: "Tiempo respuesta", icon: <svg className="w-10 h-10 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2}/><circle cx="12" cy="12" r="3" strokeWidth={2}/></svg> },
             ].map((stat, i) => (
               <div key={i} className="bg-[#141418] border-3 border-[#26262e] rounded-2xl p-6 text-center">
-                <span className="text-4xl mb-3 block">{stat.icon}</span>
+                <span className="mb-3 flex justify-center">{stat.icon}</span>
                 <div className="text-3xl font-bold text-brand mb-1">{stat.num}</div>
                 <div className="text-gray-500 text-sm">{stat.label}</div>
               </div>
@@ -540,13 +699,13 @@ export default function ServiciosPage() {
 
               <div className="space-y-4 mb-8">
                 {[
-                  { icon: "👥", text: "Equipo hispanohablante nativo" },
-                  { icon: "🎯", text: "Especialistas en tu sector" },
-                  { icon: "📅", text: "Citas agendadas en tu calendario" },
-                  { icon: "💰", text: "Pago por resultados" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>, text: "Equipo hispanohablante nativo" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2}/><circle cx="12" cy="12" r="3" strokeWidth={2}/></svg>, text: "Especialistas en tu sector" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, text: "Citas agendadas en tu calendario" },
+                  { icon: <svg className="w-6 h-6 text-[#E42C24]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, text: "Pago por resultados" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
-                    <span className="text-2xl">{item.icon}</span>
+                    <span className="flex-shrink-0">{item.icon}</span>
                     <span className="text-gray-300">{item.text}</span>
                   </div>
                 ))}

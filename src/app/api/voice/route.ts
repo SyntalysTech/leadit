@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Sarah - Spanish voice
+// Voz femenina española de España - muy natural y profesional
+const VOICE_ID = "XrExE9yKIg1WjnnlVkGX"; // Matilda - Spanish voice (Spain accent)
 
 export async function POST(req: NextRequest) {
   try {
