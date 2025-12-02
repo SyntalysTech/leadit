@@ -1,26 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  --color-brand: #E42C24;
+  --color-brand-dark: #c41f18;
+  --color-brand-light: #ff4a42;
 
-  --color-dark-900: #0a0a0f;
-  --color-dark-800: #12121a;
-  --color-dark-700: #1a1a24;
-  --color-dark-600: #22222e;
+  --color-dark-950: #08080a;
+  --color-dark-900: #0c0c10;
+  --color-dark-800: #141418;
+  --color-dark-700: #1c1c22;
+  --color-dark-600: #26262e;
+  --color-dark-500: #32323c;
 
-  --animate-fade-in: fadeIn 0.5s ease-in-out;
-  --animate-slide-up: slideUp 0.5s ease-out;
-  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-float: float 6s ease-in-out infinite;
+  --animate-fade-in: fadeIn 0.6s ease-out;
+  --animate-slide-up: slideUp 0.6s ease-out;
+  --animate-bounce-in: bounceIn 0.5s ease-out;
 }
 
 @keyframes fadeIn {
@@ -29,19 +23,14 @@
 }
 
 @keyframes slideUp {
-  0% { opacity: 0; transform: translateY(20px); }
+  0% { opacity: 0; transform: translateY(30px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
-}
-
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 10, 15;
-  --background-end-rgb: 18, 18, 26;
+@keyframes bounceIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 html {
@@ -49,57 +38,130 @@ html {
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: #ffffff;
+  background-color: #0c0c10;
   min-height: 100vh;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-border {
+/* Botón 3D Cartoon */
+.btn-3d {
   position: relative;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(56, 189, 248, 0.05));
-  border: 1px solid transparent;
-  background-clip: padding-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 32px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  background: #E42C24;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow:
+    0 6px 0 #a01d17,
+    0 8px 4px rgba(0,0,0,0.3);
+  text-decoration: none;
 }
 
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.5), rgba(56, 189, 248, 0.2));
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+.btn-3d:hover {
+  transform: translateY(2px);
+  box-shadow:
+    0 4px 0 #a01d17,
+    0 6px 4px rgba(0,0,0,0.2);
 }
 
-.glow {
-  box-shadow: 0 0 40px rgba(14, 165, 233, 0.3);
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 2px 0 #a01d17,
+    0 3px 2px rgba(0,0,0,0.15);
 }
 
-.card-hover {
-  transition: all 0.3s ease;
+.btn-3d-white {
+  background: #ffffff;
+  color: #0c0c10;
+  box-shadow:
+    0 6px 0 #c4c4c4,
+    0 8px 4px rgba(0,0,0,0.3);
 }
 
-.card-hover:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(14, 165, 233, 0.2);
+.btn-3d-white:hover {
+  box-shadow:
+    0 4px 0 #c4c4c4,
+    0 6px 4px rgba(0,0,0,0.2);
+}
+
+.btn-3d-white:active {
+  box-shadow:
+    0 2px 0 #c4c4c4,
+    0 3px 2px rgba(0,0,0,0.15);
+}
+
+/* Cards con estilo cartoon */
+.card-cartoon {
+  background: #141418;
+  border: 3px solid #26262e;
+  border-radius: 24px;
+  transition: all 0.2s ease;
+}
+
+.card-cartoon:hover {
+  border-color: #E42C24;
+  transform: translateY(-4px);
+}
+
+/* Blob shapes */
+.blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+}
+
+/* Badge cartoon */
+.badge-cartoon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(228, 44, 36, 0.15);
+  border: 2px solid #E42C24;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #E42C24;
+}
+
+/* Número grande estilo cartoon */
+.number-cartoon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: #E42C24;
+  border-radius: 16px;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: white;
+  box-shadow:
+    0 4px 0 #a01d17,
+    inset 0 -2px 0 rgba(0,0,0,0.1);
+}
+
+/* Sección con patrón de fondo */
+.pattern-dots {
+  background-image: radial-gradient(#26262e 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Imagen con marco cartoon */
+.img-frame {
+  border: 4px solid #26262e;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #141418;
+}
+
+/* Texto destacado */
+.text-brand {
+  color: #E42C24;
 }
