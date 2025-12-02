@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import ChatBot from "@/components/ChatBot";
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <main className="min-h-screen overflow-x-hidden">
+      <ChatBot />
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c0c10]/90 backdrop-blur-md border-b border-[#26262e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
