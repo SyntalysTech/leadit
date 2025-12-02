@@ -98,8 +98,8 @@ function ProcessStep({
       {/* Número central */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden lg:flex">
         <div
-          className={`w-20 h-20 rounded-full bg-[#E42C24] flex items-center justify-center text-3xl font-black text-white shadow-[0_6px_0_#a01d17] transition-all duration-500 ${
-            isVisible ? "scale-100" : "scale-0"
+          className={`w-20 h-20 rounded-full bg-[#E42C24] flex items-center justify-center text-3xl font-black text-white shadow-[0_6px_0_#a01d17] transition-opacity duration-500 ${
+            isVisible ? "opacity-100" : "opacity-0"
           }`}
         >
           {number}
@@ -231,37 +231,26 @@ function AIAnalysisVisual() {
 
 // Visual: Llamada IA
 function CallVisual() {
-  const [waveHeights, setWaveHeights] = useState([20, 35, 25, 40, 30]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWaveHeights([
-        15 + Math.random() * 30,
-        20 + Math.random() * 35,
-        15 + Math.random() * 25,
-        25 + Math.random() * 35,
-        15 + Math.random() * 30,
-      ]);
-    }, 150);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="bg-[#141418] border-4 border-[#26262e] rounded-3xl p-6 shadow-2xl">
       <div className="text-center mb-8">
         <div className="w-24 h-24 rounded-full bg-[#E42C24] mx-auto mb-4 flex items-center justify-center shadow-[0_5px_0_#a01d17] relative">
           <span className="text-3xl font-bold text-white">L</span>
-          <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping opacity-50"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-green-400/50 animate-pulse"></div>
         </div>
         <div className="text-xl font-bold text-white">Laura</div>
         <div className="text-green-400 text-sm">En llamada</div>
       </div>
       <div className="flex items-end justify-center gap-2 h-16 mb-6">
-        {waveHeights.map((height, i) => (
+        {[20, 35, 25, 40, 30].map((baseHeight, i) => (
           <div
             key={i}
-            className="w-3 bg-gradient-to-t from-[#E42C24] to-[#ff6b6b] rounded-full transition-all duration-150"
-            style={{ height: `${height}px` }}
+            className="w-3 bg-gradient-to-t from-[#E42C24] to-[#ff6b6b] rounded-full animate-pulse"
+            style={{
+              height: `${baseHeight}px`,
+              animationDelay: `${i * 150}ms`,
+              animationDuration: '0.8s'
+            }}
           ></div>
         ))}
       </div>
@@ -309,11 +298,11 @@ function CalendarVisual() {
         {[...Array(31)].map((_, i) => (
           <div
             key={i}
-            className={`h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+            className={`h-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${
               i === 14
                 ? confirmed
-                  ? "bg-green-500 text-white font-bold scale-110 shadow-[0_3px_0_#16a34a]"
-                  : "bg-[#E42C24] text-white font-bold animate-pulse"
+                  ? "bg-green-500 text-white font-bold shadow-[0_3px_0_#16a34a]"
+                  : "bg-[#E42C24] text-white font-bold"
                 : i < 5
                 ? "text-gray-600"
                 : "text-gray-300 hover:bg-[#26262e]"
@@ -323,17 +312,15 @@ function CalendarVisual() {
           </div>
         ))}
       </div>
-      {confirmed && (
-        <div className="bg-green-500/20 border-2 border-green-500 rounded-xl p-4 flex items-center gap-3">
-          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <div>
-            <div className="text-white font-bold text-sm">Demo Confirmada</div>
-            <div className="text-green-400 text-xs">15 Dic - 10:00 AM</div>
-          </div>
+      <div className={`bg-green-500/20 border-2 border-green-500 rounded-xl p-4 flex items-center gap-3 transition-opacity duration-300 ${confirmed ? "opacity-100" : "opacity-0"}`}>
+        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+          <div className="text-white font-bold text-sm">Demo Confirmada</div>
+          <div className="text-green-400 text-xs">15 Dic - 10:00 AM</div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
