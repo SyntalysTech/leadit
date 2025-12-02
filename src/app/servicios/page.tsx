@@ -112,6 +112,10 @@ function CallDemo() {
   const processUserResponse = useCallback(async (userText: string) => {
     if (!userText.trim()) return;
 
+    // Parar reconocimiento inmediatamente
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+    }
     setIsListening(false);
     setTranscript("");
 
@@ -138,12 +142,22 @@ function CallDemo() {
     if (shouldEnd) {
       setCallEnded(true);
     } else {
-      // Automáticamente empezar a escuchar de nuevo
-      startListening();
+      // Esperar un poco antes de escuchar para evitar que capture el eco
+      setTimeout(() => {
+        if (recognitionRef.current && !callEnded) {
+          try {
+            setIsListening(true);
+            setTranscript("");
+            recognitionRef.current.start();
+          } catch (e) {
+            console.error("Error restarting recognition:", e);
+          }
+        }
+      }, 500);
     }
-  }, [getAIResponse, playAudio]);
+  }, [getAIResponse, playAudio, callEnded]);
 
-  // Configurar reconocimiento de voz
+  // Configurar reconocimiento de voz - solo una vez
   useEffect(() => {
     if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -151,44 +165,44 @@ function CallDemo() {
       recognition.lang = "es-ES";
       recognition.continuous = false;
       recognition.interimResults = true;
-
-      recognition.onresult = (event) => {
-        let finalTranscript = "";
-        let interimTranscript = "";
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-
-        if (finalTranscript) {
-          setTranscript(finalTranscript);
-          processUserResponse(finalTranscript);
-        } else {
-          setTranscript(interimTranscript);
-        }
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event);
-        setIsListening(false);
-        // Reintentar escuchar si no es error de permiso
-        if (isCallActive && !callEnded && !isSpeaking) {
-          setTimeout(() => startListening(), 1000);
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
       recognitionRef.current = recognition;
     }
-  }, [isCallActive, callEnded, isSpeaking, processUserResponse]);
+  }, []);
+
+  // Configurar handlers del reconocimiento
+  useEffect(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        setTranscript(finalTranscript);
+        processUserResponse(finalTranscript);
+      } else {
+        setTranscript(interimTranscript);
+      }
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+  }, [processUserResponse]);
 
   // Empezar a escuchar
   const startListening = useCallback(() => {
