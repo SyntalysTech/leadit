@@ -127,13 +127,9 @@ export default function ChatBot() {
           <div className="bg-[#0c0c10] px-5 py-4 border-b-4 border-[#26262e] flex items-center gap-4">
             <div className="relative">
               <div className="w-12 h-12 bg-[#E42C24] rounded-xl flex items-center justify-center shadow-[0_3px_0_#a01d17]">
-                <Image
-                  src="/icon.png"
-                  alt="Leadit"
-                  width={28}
-                  height={28}
-                  className="w-7 h-7"
-                />
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
               </div>
               <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0c0c10]" />
             </div>
