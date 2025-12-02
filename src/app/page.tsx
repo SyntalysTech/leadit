@@ -3,6 +3,7 @@ import ChatBot from "@/components/ChatBot";
 import TypingText from "@/components/TypingText";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import HeroVideo from "@/components/HeroVideo";
 
 export default function Home() {
   return (
@@ -57,14 +58,7 @@ export default function Home() {
             {/* Right video */}
             <div className="relative">
               <div className="img-frame overflow-hidden">
-                <video
-                  src="/videos/hero-video.mp4"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-auto"
-                />
+                <HeroVideo />
               </div>
               {/* Floating card */}
               <div className="absolute -bottom-6 -left-6 bg-[#141418] border-3 border-[#26262e] rounded-2xl p-4 shadow-2xl hidden sm:block">
