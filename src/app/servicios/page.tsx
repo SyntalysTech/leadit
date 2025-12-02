@@ -651,7 +651,7 @@ export default function ServiciosPage() {
             <div className="hidden md:flex items-center gap-8">
               <Link href="/" className="text-gray-300 hover:text-white transition font-medium">Home</Link>
               <Link href="/servicios" className="text-white font-medium">Servicios</Link>
-              <Link href="/#proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
+              <Link href="/proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
               <Link href="/#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
               <Link href="/#contacto" className="btn-3d text-base px-6 py-3">
                 Empezar

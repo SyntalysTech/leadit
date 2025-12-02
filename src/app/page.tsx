@@ -28,7 +28,7 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-8">
               <a href="#home" className="text-gray-300 hover:text-white transition font-medium">Home</a>
               <Link href="/servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</Link>
-              <a href="#proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</a>
+              <Link href="/proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
               <a href="#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</a>
               <a href="#contacto" className="btn-3d text-base px-6 py-3">
                 Empezar
@@ -49,7 +49,7 @@ export default function Home() {
             <div className="px-4 py-6 space-y-4">
               <a href="#home" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</a>
               <Link href="/servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</Link>
-              <a href="#proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</a>
+              <Link href="/proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</Link>
               <a href="#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</a>
               <a href="#contacto" className="btn-3d w-full mt-4">Empezar</a>
             </div>
