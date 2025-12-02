@@ -8,20 +8,23 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main id="home" className="min-h-screen overflow-x-hidden">
       <ChatBot />
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c0c10]/90 backdrop-blur-md border-b border-[#26262e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            <Image
-              src="/logo.png"
-              alt="Leadit"
-              width={140}
-              height={45}
-              className="h-10 w-auto"
-            />
+            <a href="#home">
+              <Image
+                src="/logo.png"
+                alt="Leadit"
+                width={140}
+                height={45}
+                className="h-10 w-auto cursor-pointer"
+              />
+            </a>
             <div className="hidden md:flex items-center gap-8">
+              <a href="#home" className="text-gray-300 hover:text-white transition font-medium">Home</a>
               <a href="#servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</a>
               <a href="#proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</a>
               <a href="#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</a>
@@ -42,6 +45,7 @@ export default function Home() {
         {menuOpen && (
           <div className="md:hidden bg-[#141418] border-t border-[#26262e]">
             <div className="px-4 py-6 space-y-4">
+              <a href="#home" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</a>
               <a href="#servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</a>
               <a href="#proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</a>
               <a href="#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</a>
