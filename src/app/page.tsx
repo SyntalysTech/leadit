@@ -376,7 +376,7 @@ export default function Home() {
                   contacto@leadit.es
                 </a>
                 <a
-                  href="https://wa.me/34684094634"
+                  href="https://wa.me/34641590487"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-3d btn-3d-white inline-flex items-center justify-center gap-3"
