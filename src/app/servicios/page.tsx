@@ -25,11 +25,16 @@ function CallDemo() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesRef = useRef<CallMessage[]>([]);
+  const callEndedRef = useRef(false);
 
-  // Mantener ref sincronizado con state
+  // Mantener refs sincronizados con state
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    callEndedRef.current = callEnded;
+  }, [callEnded]);
 
   // Timer de llamada
   useEffect(() => {
@@ -141,10 +146,11 @@ function CallDemo() {
 
     if (shouldEnd) {
       setCallEnded(true);
+      callEndedRef.current = true;
     } else {
       // Esperar un poco antes de escuchar para evitar que capture el eco
       setTimeout(() => {
-        if (recognitionRef.current && !callEnded) {
+        if (recognitionRef.current && !callEndedRef.current) {
           try {
             setIsListening(true);
             setTranscript("");
@@ -155,7 +161,7 @@ function CallDemo() {
         }
       }, 500);
     }
-  }, [getAIResponse, playAudio, callEnded]);
+  }, [getAIResponse, playAudio]);
 
   // Configurar reconocimiento de voz - solo una vez
   useEffect(() => {
@@ -249,6 +255,7 @@ function CallDemo() {
 
     setIsCallActive(true);
     setCallEnded(false);
+    callEndedRef.current = false;
     setMessages([]);
     setCallTime(0);
 
@@ -266,6 +273,7 @@ function CallDemo() {
   const endCall = () => {
     setIsCallActive(false);
     setCallEnded(true);
+    callEndedRef.current = true;
     setIsSpeaking(false);
     setIsListening(false);
     setTranscript("");
@@ -285,6 +293,7 @@ function CallDemo() {
     setMessages([]);
     setCallTime(0);
     setCallEnded(false);
+    callEndedRef.current = false;
     setIsCallActive(false);
   };
 
@@ -823,18 +832,18 @@ export default function ServiciosPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="img-frame">
+              <div className="img-frame overflow-hidden">
                 <img
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop"
-                  alt="Profesional de ventas"
-                  className="w-full h-auto"
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=cover&crop=faces"
+                  alt="Joven profesional de ventas"
+                  className="w-full h-full object-cover"
                 />
               </div>
-              <div className="img-frame mt-8">
+              <div className="img-frame mt-8 overflow-hidden">
                 <img
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&h=500&fit=crop"
-                  alt="Profesional de ventas"
-                  className="w-full h-auto"
+                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=500&fit=cover&crop=faces"
+                  alt="Joven profesional de ventas"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
