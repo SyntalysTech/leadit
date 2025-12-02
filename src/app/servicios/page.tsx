@@ -654,8 +654,8 @@ export default function ServiciosPage() {
               <Link href="/" className="text-gray-300 hover:text-white transition font-medium">Home</Link>
               <Link href="/servicios" className="text-white font-medium">Servicios</Link>
               <Link href="/proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
-              <Link href="/#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
-              <Link href="/#contacto" className="btn-3d text-base px-6 py-3">
+              <Link href="/contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
+              <Link href="/contacto" className="btn-3d text-base px-6 py-3">
                 Empezar
               </Link>
             </div>
@@ -675,7 +675,7 @@ export default function ServiciosPage() {
               <Link href="/" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</Link>
               <Link href="/servicios" className="block text-white font-medium text-lg">Servicios</Link>
               <Link href="/proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</Link>
-              <Link href="/#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
+              <Link href="/contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
             </div>
           </div>
         )}

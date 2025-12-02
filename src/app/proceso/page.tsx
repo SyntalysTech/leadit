@@ -454,8 +454,8 @@ export default function ProcesoPage() {
               <Link href="/" className="text-gray-300 hover:text-white transition font-medium">Home</Link>
               <Link href="/servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</Link>
               <Link href="/proceso" className="text-white font-medium">Proceso</Link>
-              <Link href="/#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
-              <Link href="/#contacto" className="bg-[#E42C24] hover:bg-[#c42420] text-white font-bold px-6 py-3 rounded-xl transition shadow-[0_4px_0_#a01d17] hover:shadow-[0_2px_0_#a01d17] hover:translate-y-0.5">
+              <Link href="/contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
+              <Link href="/contacto" className="bg-[#E42C24] hover:bg-[#c42420] text-white font-bold px-6 py-3 rounded-xl transition shadow-[0_4px_0_#a01d17] hover:shadow-[0_2px_0_#a01d17] hover:translate-y-0.5">
                 Empezar
               </Link>
             </div>
@@ -475,7 +475,7 @@ export default function ProcesoPage() {
               <Link href="/" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</Link>
               <Link href="/servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</Link>
               <Link href="/proceso" className="block text-white font-medium text-lg">Proceso</Link>
-              <Link href="/#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
+              <Link href="/contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
             </div>
           </div>
         )}
@@ -518,7 +518,7 @@ export default function ProcesoPage() {
             Cada minuto que pasa, pierdes leads. Automatiza hoy y empieza a cerrar más.
           </p>
           <Link
-            href="/#contacto"
+            href="/contacto"
             className="inline-block bg-[#E42C24] hover:bg-[#c42420] text-white font-bold text-lg px-10 py-5 rounded-2xl transition shadow-[0_6px_0_#a01d17] hover:shadow-[0_3px_0_#a01d17] hover:translate-y-0.5"
           >
             Quiero mi demo gratis
