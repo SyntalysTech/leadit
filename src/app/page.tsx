@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import ChatBot from "@/components/ChatBot";
+import TypingText from "@/components/TypingText";
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,7 +68,7 @@ export default function Home() {
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
                 Tu equipo de ventas
-                <span className="text-brand block">que nunca duerme</span>
+                <span className="block h-[1.2em]"><TypingText /></span>
               </h1>
               <p className="text-xl text-gray-400 mb-8 leading-relaxed">
                 Chatbots, call centers virtuales, closers y setters impulsados por IA.
