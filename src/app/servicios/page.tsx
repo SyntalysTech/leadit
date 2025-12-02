@@ -633,6 +633,8 @@ function WorkflowDemo() {
 }
 
 export default function ServiciosPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <main className="min-h-screen bg-[#0c0c10]">
       {/* Navbar */}
@@ -657,8 +659,26 @@ export default function ServiciosPage() {
                 Empezar
               </Link>
             </div>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden text-white p-2"
+            >
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={menuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+              </svg>
+            </button>
           </div>
         </div>
+        {menuOpen && (
+          <div className="md:hidden bg-[#141418] border-t border-[#26262e]">
+            <div className="px-4 py-6 space-y-4">
+              <Link href="/" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</Link>
+              <Link href="/servicios" className="block text-white font-medium text-lg">Servicios</Link>
+              <Link href="/proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</Link>
+              <Link href="/#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
