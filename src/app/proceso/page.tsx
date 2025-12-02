@@ -7,7 +7,6 @@ import { useState, useEffect, useRef } from "react";
 // Componente de línea animada que conecta los pasos
 function AnimatedPath() {
   const [progress, setProgress] = useState(0);
-  const pathRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,7 +41,6 @@ function AnimatedPath() {
         strokeLinecap="round"
       />
       <line
-        ref={pathRef}
         x1="8"
         y1="0"
         x2="8"
