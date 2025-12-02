@@ -1,61 +1,14 @@
-"use client";
-
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import ChatBot from "@/components/ChatBot";
 import TypingText from "@/components/TypingText";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <main id="home" className="min-h-screen overflow-x-hidden">
       <ChatBot />
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c0c10]/90 backdrop-blur-md border-b border-[#26262e]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <a href="#home">
-              <Image
-                src="/logo.png"
-                alt="Leadit"
-                width={140}
-                height={45}
-                className="h-10 w-auto cursor-pointer"
-              />
-            </a>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#home" className="text-gray-300 hover:text-white transition font-medium">Home</a>
-              <Link href="/servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</Link>
-              <Link href="/proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
-              <Link href="/contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</Link>
-              <Link href="/contacto" className="btn-3d text-base px-6 py-3">
-                Empezar
-              </Link>
-            </div>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden text-white p-2"
-            >
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={menuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-              </svg>
-            </button>
-          </div>
-        </div>
-        {menuOpen && (
-          <div className="md:hidden bg-[#141418] border-t border-[#26262e]">
-            <div className="px-4 py-6 space-y-4">
-              <a href="#home" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</a>
-              <Link href="/servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</Link>
-              <Link href="/proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</Link>
-              <Link href="/contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</Link>
-              <Link href="/contacto" className="btn-3d w-full mt-4">Empezar</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Header />
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative">
@@ -400,30 +353,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-[#26262e]">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
-              <Image
-                src="/logo.png"
-                alt="Leadit"
-                width={120}
-                height={40}
-                className="h-8 w-auto"
-              />
-              <span className="text-gray-500 text-sm">
-                © {new Date().getFullYear()} Leadit. Todos los derechos reservados.
-              </span>
-            </div>
-            <div className="flex items-center gap-8">
-              <a href="#" className="text-gray-500 hover:text-white transition text-sm">Privacidad</a>
-              <a href="#" className="text-gray-500 hover:text-white transition text-sm">Términos</a>
-              <a href="#" className="text-gray-500 hover:text-white transition text-sm">Cookies</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

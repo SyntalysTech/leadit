@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 // Componente de partículas flotantes
 function FloatingParticles() {
@@ -120,7 +120,6 @@ function AnimatedStat({ value, label, delay }: { value: string; label: string; d
 }
 
 export default function ContactoPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [formState, setFormState] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -152,49 +151,7 @@ export default function ContactoPage() {
 
   return (
     <main className="min-h-screen bg-[#0c0c10]">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c0c10]/90 backdrop-blur-md border-b border-[#26262e]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Link href="/">
-              <Image
-                src="/logo.png"
-                alt="Leadit"
-                width={140}
-                height={45}
-                className="h-10 w-auto cursor-pointer"
-              />
-            </Link>
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-gray-300 hover:text-white transition font-medium">Home</Link>
-              <Link href="/servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</Link>
-              <Link href="/proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</Link>
-              <Link href="/contacto" className="text-white font-medium">Contacto</Link>
-              <Link href="/contacto" className="bg-[#E42C24] hover:bg-[#c42420] text-white font-bold px-6 py-3 rounded-xl transition shadow-[0_4px_0_#a01d17] hover:shadow-[0_2px_0_#a01d17] hover:translate-y-0.5">
-                Empezar
-              </Link>
-            </div>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden text-white p-2"
-            >
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={menuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-              </svg>
-            </button>
-          </div>
-        </div>
-        {menuOpen && (
-          <div className="md:hidden bg-[#141418] border-t border-[#26262e]">
-            <div className="px-4 py-6 space-y-4">
-              <Link href="/" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</Link>
-              <Link href="/servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</Link>
-              <Link href="/proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</Link>
-              <Link href="/contacto" className="block text-white font-medium text-lg">Contacto</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Header />
 
       {/* Hero Section */}
       <section className="pt-32 pb-16 px-4 relative overflow-hidden">
@@ -443,20 +400,7 @@ export default function ContactoPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-[#26262e] py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <Image src="/logo.png" alt="Leadit" width={120} height={40} className="h-8 w-auto" />
-            <div className="flex items-center gap-6">
-              <Link href="/" className="text-gray-500 hover:text-white transition text-sm">Home</Link>
-              <Link href="/servicios" className="text-gray-500 hover:text-white transition text-sm">Servicios</Link>
-              <Link href="/proceso" className="text-gray-500 hover:text-white transition text-sm">Proceso</Link>
-              <Link href="/contacto" className="text-gray-500 hover:text-white transition text-sm">Contacto</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
