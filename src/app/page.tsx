@@ -230,13 +230,13 @@ export default function Home() {
             </div>
             <div className="order-1 lg:order-2">
               <div className="number-cartoon mb-4">03</div>
-              <h3 className="text-2xl sm:text-3xl font-bold mb-4">Closers & Setters con IA</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold mb-4">Closers & Setters</h3>
               <p className="text-gray-400 text-lg mb-6 leading-relaxed">
-                Agentes de ventas virtuales que califican leads, agendan citas y cierran tratos.
+                Profesionales de ventas que califican leads, agendan citas y cierran tratos.
                 Tu equipo solo habla con prospectos cualificados y listos para comprar.
               </p>
               <ul className="space-y-3">
-                {["Calificación automática de leads", "Agendamiento en tu calendario", "Seguimiento persistente", "Negociación inteligente"].map((item, i) => (
+                {["Calificación de leads", "Agendamiento en tu calendario", "Seguimiento persistente", "Cierre de ventas"].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-gray-300">
                     <span className="w-6 h-6 bg-[#E42C24] rounded-lg flex items-center justify-center flex-shrink-0">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,13 +254,13 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="number-cartoon mb-4">04</div>
-              <h3 className="text-2xl sm:text-3xl font-bold mb-4">Automatizaciones</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold mb-4">Automatizaciones con IA</h3>
               <p className="text-gray-400 text-lg mb-6 leading-relaxed">
-                Flujos de trabajo automáticos que eliminan tareas repetitivas. Conectamos todas tus
-                herramientas en un ecosistema inteligente que trabaja mientras duermes.
+                Flujos de trabajo inteligentes que eliminan tareas repetitivas. Conectamos todas tus
+                herramientas en un ecosistema potenciado por IA que trabaja mientras duermes.
               </p>
               <ul className="space-y-3">
-                {["Integración con +5000 apps", "Workflows personalizados", "Triggers inteligentes", "Sin código necesario"].map((item, i) => (
+                {["Integración con +5000 apps", "Workflows con inteligencia artificial", "Triggers inteligentes", "Sin código necesario"].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-gray-300">
                     <span className="w-6 h-6 bg-[#E42C24] rounded-lg flex items-center justify-center flex-shrink-0">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,13 +340,13 @@ export default function Home() {
             </blockquote>
             <div className="flex items-center justify-center gap-4">
               <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face"
-                alt="Cliente"
+                src="https://media.licdn.com/dms/image/v2/D4E03AQHag-hjxq9aPQ/profile-displayphoto-scale_200_200/B4EZfifVK7HIAc-/0/1751851554538?e=1766016000&v=beta&t=ZLPbru5_pM0kAZUCfzI7PPlVeybCtuspFWuQbs2kjEo"
+                alt="Adrian Serrano"
                 className="w-14 h-14 rounded-full border-3 border-[#26262e]"
               />
               <div className="text-left">
-                <div className="font-bold">Carlos Martínez</div>
-                <div className="text-gray-500">CEO, TechStartup</div>
+                <div className="font-bold">Adrian Serrano</div>
+                <div className="text-gray-500">Founder, Syntalys Tech</div>
               </div>
             </div>
           </div>
