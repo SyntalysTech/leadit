@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 // Tipos para la conversación
 interface CallMessage {
@@ -10,50 +10,47 @@ interface CallMessage {
   content: string;
 }
 
-// Demo de llamada interactiva con IA real
+// Demo de llamada de VOZ real - como una llamada telefónica
 function CallDemo() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [userInput, setUserInput] = useState("");
+  const [callTime, setCallTime] = useState(0);
+  const [transcript, setTranscript] = useState("");
   const [messages, setMessages] = useState<CallMessage[]>([]);
   const [callEnded, setCallEnded] = useState(false);
+  const [micPermission, setMicPermission] = useState<boolean | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const messagesRef = useRef<CallMessage[]>([]);
 
-  // Auto-scroll a últimos mensajes
+  // Mantener ref sincronizado con state
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesRef.current = messages;
   }, [messages]);
 
-  // Configurar reconocimiento de voz
+  // Timer de llamada
   useEffect(() => {
-    if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.lang = "es-ES";
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-
-      recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setUserInput(transcript);
-        setIsListening(false);
-      };
-
-      recognitionRef.current.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
+    if (isCallActive && !callEnded) {
+      timerRef.current = setInterval(() => {
+        setCallTime(prev => prev + 1);
+      }, 1000);
     }
-  }, []);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isCallActive, callEnded]);
 
-  const playAudio = async (text: string): Promise<void> => {
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Reproducir audio con ElevenLabs
+  const playAudio = useCallback(async (text: string): Promise<void> => {
     return new Promise(async (resolve) => {
       setIsSpeaking(true);
       try {
@@ -81,6 +78,7 @@ function CallDemo() {
           };
           await audioRef.current.play();
         } else {
+          setIsSpeaking(false);
           resolve();
         }
       } catch (error) {
@@ -89,9 +87,10 @@ function CallDemo() {
         resolve();
       }
     });
-  };
+  }, []);
 
-  const getAIResponse = async (conversation: CallMessage[]): Promise<string> => {
+  // Obtener respuesta de IA
+  const getAIResponse = useCallback(async (conversation: CallMessage[]): Promise<string> => {
     try {
       const response = await fetch("/api/call-agent", {
         method: "POST",
@@ -105,30 +104,20 @@ function CallDemo() {
       return data.response;
     } catch (error) {
       console.error("Error getting AI response:", error);
-      return "Disculpa, ha habido un problema de conexión. ¿Podemos continuar?";
+      return "Disculpa, ha habido un problema. ¿Puedes repetir?";
     }
-  };
+  }, []);
 
-  const startCall = async () => {
-    setIsCallActive(true);
-    setCallEnded(false);
-    setMessages([]);
-    setIsLoading(true);
+  // Procesar respuesta del usuario y obtener respuesta de IA
+  const processUserResponse = useCallback(async (userText: string) => {
+    if (!userText.trim()) return;
 
-    const greeting = "¡Hola, buenos días! Soy Laura de Leadit. ¿Hablo con el responsable de ventas o marketing de la empresa?";
-    setMessages([{ role: "agent", content: greeting }]);
-    setIsLoading(false);
-    await playAudio(greeting);
-  };
-
-  const sendMessage = async () => {
-    if (!userInput.trim() || isLoading || isSpeaking) return;
-
-    const userMessage = userInput.trim();
-    setUserInput("");
+    setIsListening(false);
+    setTranscript("");
 
     // Añadir mensaje del usuario
-    const updatedMessages: CallMessage[] = [...messages, { role: "user", content: userMessage }];
+    const userMessage: CallMessage = { role: "user", content: userText };
+    const updatedMessages = [...messagesRef.current, userMessage];
     setMessages(updatedMessages);
 
     // Obtener respuesta de IA
@@ -139,52 +128,150 @@ function CallDemo() {
     const shouldEnd = aiResponse.includes("[FIN_LLAMADA]");
     const cleanResponse = aiResponse.replace("[FIN_LLAMADA]", "").trim();
 
-    setMessages(prev => [...prev, { role: "agent", content: cleanResponse }]);
+    const agentMessage: CallMessage = { role: "agent", content: cleanResponse };
+    setMessages(prev => [...prev, agentMessage]);
     setIsLoading(false);
 
-    // Reproducir audio
+    // Laura HABLA la respuesta
     await playAudio(cleanResponse);
 
     if (shouldEnd) {
       setCallEnded(true);
+    } else {
+      // Automáticamente empezar a escuchar de nuevo
+      startListening();
+    }
+  }, [getAIResponse, playAudio]);
+
+  // Configurar reconocimiento de voz
+  useEffect(() => {
+    if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = "es-ES";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setTranscript(finalTranscript);
+          processUserResponse(finalTranscript);
+        } else {
+          setTranscript(interimTranscript);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event);
+        setIsListening(false);
+        // Reintentar escuchar si no es error de permiso
+        if (isCallActive && !callEnded && !isSpeaking) {
+          setTimeout(() => startListening(), 1000);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [isCallActive, callEnded, isSpeaking, processUserResponse]);
+
+  // Empezar a escuchar
+  const startListening = useCallback(() => {
+    if (recognitionRef.current && !isSpeaking && !isLoading && !callEnded) {
+      try {
+        setIsListening(true);
+        setTranscript("");
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error("Error starting recognition:", error);
+      }
+    }
+  }, [isSpeaking, isLoading, callEnded]);
+
+  // Parar de escuchar
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
     }
   };
 
-  const toggleListening = () => {
-    if (!recognitionRef.current) {
-      alert("Tu navegador no soporta reconocimiento de voz");
+  // Verificar permisos de micrófono
+  const checkMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setMicPermission(true);
+      return true;
+    } catch {
+      setMicPermission(false);
+      return false;
+    }
+  };
+
+  // Iniciar llamada
+  const startCall = async () => {
+    // Verificar micrófono primero
+    const hasMic = await checkMicPermission();
+    if (!hasMic) {
+      alert("Necesitas permitir el acceso al micrófono para hacer la llamada demo");
       return;
     }
 
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      setIsListening(true);
-      recognitionRef.current.start();
-    }
+    setIsCallActive(true);
+    setCallEnded(false);
+    setMessages([]);
+    setCallTime(0);
+
+    // Laura saluda con VOZ
+    const greeting = "¡Hola, buenos días! Soy Laura de Leadit. ¿Hablo con el responsable de ventas?";
+    setMessages([{ role: "agent", content: greeting }]);
+
+    await playAudio(greeting);
+
+    // Empezar a escuchar al usuario
+    startListening();
   };
 
+  // Colgar llamada
   const endCall = () => {
     setIsCallActive(false);
-    setMessages([]);
-    setCallEnded(false);
+    setCallEnded(true);
     setIsSpeaking(false);
     setIsListening(false);
+    setTranscript("");
+    stopListening();
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+  // Reiniciar llamada
+  const resetCall = () => {
+    setMessages([]);
+    setCallTime(0);
+    setCallEnded(false);
+    setIsCallActive(false);
   };
 
   return (
@@ -203,142 +290,151 @@ function CallDemo() {
             {/* Call screen */}
             <div className="h-[500px] flex flex-col">
               {!isCallActive ? (
-                // Idle state
+                // Pantalla inicial
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
-                  <div className="w-24 h-24 bg-[#E42C24] rounded-full flex items-center justify-center mb-6 shadow-[0_4px_0_#a01d17]">
-                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-28 h-28 bg-[#E42C24] rounded-full flex items-center justify-center mb-6 shadow-[0_6px_0_#a01d17]">
+                    <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Demo Call Center IA</h3>
-                  <p className="text-gray-400 text-center text-sm mb-8">
-                    Habla con Laura, nuestra agente IA con voz real. Responde por texto o micrófono.
+                  <h3 className="text-2xl font-bold text-white mb-2">Llamada con IA</h3>
+                  <p className="text-gray-400 text-center text-sm mb-2">
+                    Habla con Laura usando tu voz real.
+                  </p>
+                  <p className="text-gray-500 text-center text-xs mb-8">
+                    Ella te hablará y tú respondes por micrófono.
                   </p>
                   <button
                     onClick={startCall}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-2xl transition shadow-[0_4px_0_#16a34a] hover:shadow-[0_2px_0_#16a34a] hover:translate-y-0.5"
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-2xl transition shadow-[0_4px_0_#16a34a] hover:shadow-[0_2px_0_#16a34a] hover:translate-y-0.5 flex items-center justify-center gap-3"
                   >
-                    Iniciar llamada demo
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    Llamar ahora
+                  </button>
+                  {micPermission === false && (
+                    <p className="text-red-400 text-xs mt-4 text-center">
+                      Permite el acceso al micrófono para usar esta demo
+                    </p>
+                  )}
+                </div>
+              ) : callEnded ? (
+                // Llamada terminada
+                <div className="flex-1 flex flex-col items-center justify-center p-8">
+                  <div className="w-20 h-20 bg-[#26262e] rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Llamada finalizada</h3>
+                  <p className="text-gray-400 text-center text-sm mb-2">
+                    Duración: {formatTime(callTime)}
+                  </p>
+                  <p className="text-gray-500 text-center text-xs mb-8">
+                    {messages.length} mensajes intercambiados
+                  </p>
+                  <button
+                    onClick={resetCall}
+                    className="bg-[#E42C24] hover:bg-[#c42420] text-white font-bold py-3 px-8 rounded-xl transition shadow-[0_3px_0_#a01d17]"
+                  >
+                    Nueva llamada
                   </button>
                 </div>
               ) : (
-                // Active call
+                // Llamada activa
                 <div className="flex-1 flex flex-col">
-                  {/* Call header */}
-                  <div className="p-4 text-center border-b border-[#26262e]">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="w-12 h-12 bg-[#E42C24] rounded-full flex items-center justify-center">
-                        <span className="text-lg font-bold text-white">L</span>
-                      </div>
-                      <div className="text-left">
-                        <h3 className="text-base font-bold text-white">Laura - Leadit</h3>
-                        <p className="text-green-400 text-xs flex items-center gap-2">
-                          {isSpeaking ? (
-                            <>
-                              <span className="flex gap-0.5">
-                                <span className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                                <span className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                                <span className="w-1 h-1 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
-                              </span>
-                              Hablando...
-                            </>
-                          ) : isLoading ? (
-                            "Pensando..."
-                          ) : (
-                            "En llamada"
-                          )}
-                        </p>
-                      </div>
+                  {/* Header de llamada */}
+                  <div className="p-6 text-center">
+                    <div className="w-20 h-20 bg-[#E42C24] rounded-full flex items-center justify-center mx-auto mb-4 relative">
+                      <span className="text-2xl font-bold text-white">L</span>
+                      {isSpeaking && (
+                        <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping"></div>
+                      )}
                     </div>
+                    <h3 className="text-xl font-bold text-white">Laura</h3>
+                    <p className="text-gray-400 text-sm">Leadit</p>
+                    <p className="text-green-400 text-lg font-mono mt-2">{formatTime(callTime)}</p>
                   </div>
 
-                  {/* Conversation */}
-                  <div className="flex-1 p-3 overflow-y-auto space-y-3">
-                    {messages.map((msg, i) => (
-                      <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : ""}`}>
-                        {msg.role === "agent" && (
-                          <div className="w-7 h-7 bg-[#E42C24] rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-bold text-white">L</span>
-                          </div>
-                        )}
-                        <div className={`rounded-2xl p-3 max-w-[80%] ${
-                          msg.role === "user"
-                            ? "bg-[#E42C24] rounded-tr-sm"
-                            : "bg-[#26262e] rounded-tl-sm"
-                        }`}>
-                          <p className="text-sm text-white">{msg.content}</p>
+                  {/* Estado de la llamada */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-6">
+                    {isSpeaking ? (
+                      // Laura está hablando
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 mb-4">
+                          {[...Array(5)].map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-2 bg-green-400 rounded-full animate-pulse"
+                              style={{
+                                height: `${20 + Math.random() * 30}px`,
+                                animationDelay: `${i * 100}ms`,
+                                animationDuration: "0.5s"
+                              }}
+                            ></div>
+                          ))}
                         </div>
-                        {msg.role === "user" && (
-                          <div className="w-7 h-7 bg-[#3a3a3a] rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-bold text-white">Tú</span>
-                          </div>
-                        )}
+                        <p className="text-green-400 font-medium">Laura está hablando...</p>
                       </div>
-                    ))}
-                    {isLoading && (
-                      <div className="flex gap-2">
-                        <div className="w-7 h-7 bg-[#E42C24] rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-bold text-white">L</span>
+                    ) : isLoading ? (
+                      // Procesando
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                          <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                          <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                          <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
                         </div>
-                        <div className="bg-[#26262e] rounded-2xl rounded-tl-sm p-3">
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                            <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                            <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
-                          </div>
-                        </div>
+                        <p className="text-yellow-400 font-medium">Procesando...</p>
                       </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Input area */}
-                  <div className="p-3 border-t border-[#26262e]">
-                    {!callEnded ? (
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="text"
-                          value={userInput}
-                          onChange={(e) => setUserInput(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="Escribe tu respuesta..."
-                          disabled={isLoading || isSpeaking}
-                          className="flex-1 bg-[#26262e] text-white text-sm px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E42C24] disabled:opacity-50"
-                        />
-                        <button
-                          onClick={toggleListening}
-                          disabled={isLoading || isSpeaking}
-                          className={`w-11 h-11 rounded-xl flex items-center justify-center transition ${
-                            isListening
-                              ? "bg-red-500 animate-pulse"
-                              : "bg-[#26262e] hover:bg-[#3a3a3a]"
-                          } disabled:opacity-50`}
-                          title="Hablar por micrófono"
-                        >
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ) : isListening ? (
+                      // Escuchando al usuario
+                      <div className="text-center w-full">
+                        <div className="w-20 h-20 bg-[#E42C24] rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                           </svg>
-                        </button>
-                        <button
-                          onClick={sendMessage}
-                          disabled={!userInput.trim() || isLoading || isSpeaking}
-                          className="w-11 h-11 bg-[#E42C24] rounded-xl flex items-center justify-center shadow-[0_3px_0_#a01d17] hover:shadow-[0_1px_0_#a01d17] hover:translate-y-0.5 transition disabled:opacity-50 disabled:hover:translate-y-0"
-                        >
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                          </svg>
-                        </button>
+                        </div>
+                        <p className="text-[#E42C24] font-medium mb-3">Te escucho, habla...</p>
+                        {transcript && (
+                          <div className="bg-[#26262e] rounded-xl p-3 mx-4">
+                            <p className="text-white text-sm italic">&quot;{transcript}&quot;</p>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <p className="text-center text-green-400 text-sm py-2">Llamada finalizada</p>
+                      // Esperando
+                      <div className="text-center">
+                        <p className="text-gray-400">Conectando...</p>
+                      </div>
                     )}
-                    <div className="flex justify-center mt-3">
+                  </div>
+
+                  {/* Botones de control */}
+                  <div className="p-6">
+                    <div className="flex justify-center gap-6">
+                      {/* Botón de micrófono */}
+                      <button
+                        onClick={isListening ? stopListening : startListening}
+                        disabled={isSpeaking || isLoading}
+                        className={`w-16 h-16 rounded-full flex items-center justify-center transition ${
+                          isListening
+                            ? "bg-[#E42C24] shadow-[0_4px_0_#a01d17]"
+                            : "bg-[#26262e] hover:bg-[#3a3a3a]"
+                        } disabled:opacity-50`}
+                      >
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                      </button>
+
+                      {/* Botón de colgar */}
                       <button
                         onClick={endCall}
-                        className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-[0_3px_0_#b91c1c]"
+                        className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-[0_4px_0_#b91c1c] hover:shadow-[0_2px_0_#b91c1c] hover:translate-y-0.5 transition"
                       >
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
                         </svg>
                       </button>
                     </div>
