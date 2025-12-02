@@ -54,12 +54,15 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right image */}
+            {/* Right video */}
             <div className="relative">
-              <div className="img-frame">
-                <img
-                  src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=600&fit=crop"
-                  alt="Equipo trabajando con IA"
+              <div className="img-frame overflow-hidden">
+                <video
+                  src="/videos/hero-video.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                   className="w-full h-auto"
                 />
               </div>
