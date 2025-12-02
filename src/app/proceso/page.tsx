@@ -338,9 +338,7 @@ function CloseVisual() {
 
   return (
     <div className="bg-[#141418] border-4 border-[#26262e] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-      {stage === 3 && (
-        <div className="absolute inset-0 bg-green-500/10 animate-pulse"></div>
-      )}
+      <div className={`absolute inset-0 bg-green-500/10 transition-opacity duration-500 ${stage === 3 ? "opacity-100" : "opacity-0"}`}></div>
       <div className="relative">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -387,12 +385,10 @@ function CloseVisual() {
           ))}
         </div>
 
-        {stage === 3 && (
-          <div className="mt-6 text-center">
-            <div className="text-4xl font-black text-green-400">+12.000€</div>
-            <div className="text-gray-500 text-sm">Nuevo cliente</div>
-          </div>
-        )}
+        <div className={`mt-6 text-center transition-opacity duration-500 ${stage === 3 ? "opacity-100" : "opacity-0"}`}>
+          <div className="text-4xl font-black text-green-400">+12.000€</div>
+          <div className="text-gray-500 text-sm">Nuevo cliente</div>
+        </div>
       </div>
     </div>
   );
