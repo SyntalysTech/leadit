@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import ChatBot from "@/components/ChatBot";
 import TypingText from "@/components/TypingText";
@@ -26,7 +27,7 @@ export default function Home() {
             </a>
             <div className="hidden md:flex items-center gap-8">
               <a href="#home" className="text-gray-300 hover:text-white transition font-medium">Home</a>
-              <a href="#servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</a>
+              <Link href="/servicios" className="text-gray-300 hover:text-white transition font-medium">Servicios</Link>
               <a href="#proceso" className="text-gray-300 hover:text-white transition font-medium">Proceso</a>
               <a href="#contacto" className="text-gray-300 hover:text-white transition font-medium">Contacto</a>
               <a href="#contacto" className="btn-3d text-base px-6 py-3">
@@ -47,7 +48,7 @@ export default function Home() {
           <div className="md:hidden bg-[#141418] border-t border-[#26262e]">
             <div className="px-4 py-6 space-y-4">
               <a href="#home" className="block text-gray-300 hover:text-white transition font-medium text-lg">Home</a>
-              <a href="#servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</a>
+              <Link href="/servicios" className="block text-gray-300 hover:text-white transition font-medium text-lg">Servicios</Link>
               <a href="#proceso" className="block text-gray-300 hover:text-white transition font-medium text-lg">Proceso</a>
               <a href="#contacto" className="block text-gray-300 hover:text-white transition font-medium text-lg">Contacto</a>
               <a href="#contacto" className="btn-3d w-full mt-4">Empezar</a>
